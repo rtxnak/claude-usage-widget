@@ -230,10 +230,10 @@ BAR_DEFAULT_FILL = {'session': BAR_FILL_SESSION,
 BAR_PRESETS = [BAR_FILL_SESSION, BAR_FILL_WEEKLY, BAR_FILL_HIGH, BAR_FILL_PURPLE]
 
 # ─── App ────────────────────────────────────────────
-APP_VERSION = '2.9.1'
+APP_VERSION = '2.10.0'
 
 # ─── Auto-update ────────────────────────────────────
-UPDATE_REPO = 'niccolo-sabato/claude-usage-widget'
+UPDATE_REPO = 'rtxnak/claude-usage-widget'
 UPDATE_API_URL = f'https://api.github.com/repos/{UPDATE_REPO}/releases/latest'
 UPDATE_RELEASES_URL = f'https://github.com/{UPDATE_REPO}/releases'
 UPDATE_ASSET_NAME = 'ClaudeUsage-Setup.exe'
@@ -770,6 +770,9 @@ LANG = {
         'tip_countdown_dot': 'A pulsing dot signals when the next refresh is near.',
         'tip_countdown_full': 'Show the exact time left until the limit resets.',
         'tip_sync': 'Show the time of the last refresh next to each bar.',
+        'menu_pace_on': 'Weekly pace markers: ON',
+        'menu_pace_off': 'Weekly pace markers: OFF',
+        'tip_pace': 'Split the weekly bar into 7 days and mark where usage should be by now (1/7 per day).',
         'menu_theme': 'Theme',
         'theme_dark': 'Dark',
         'theme_light': 'Light',
@@ -1000,6 +1003,9 @@ LANG = {
         'tip_countdown_dot': 'Un puntino che pulsa segnala quando manca poco al prossimo aggiornamento.',
         'tip_countdown_full': 'Mostra il tempo esatto che manca al reset del limite.',
         'tip_sync': 'Mostra accanto a ogni barra quando \u00e8 stato fatto l\u2019ultimo aggiornamento.',
+        'menu_pace_on': 'Ritmo barra settimanale: attivo',
+        'menu_pace_off': 'Ritmo barra settimanale: disattivo',
+        'tip_pace': 'Divide la barra settimanale in 7 giorni e segna dove dovrebbe essere il consumo ora (1/7 al giorno).',
         'menu_theme': 'Tema',
         'theme_dark': 'Scuro',
         'theme_light': 'Chiaro',
@@ -1234,6 +1240,9 @@ LANG = {
         'tip_countdown_dot': '\u6b21\u306e\u66f4\u65b0\u304c\u8fd1\u3065\u304f\u3068\u70b9\u6ec5\u3059\u308b\u30c9\u30c3\u30c8\u3067\u77e5\u3089\u305b\u307e\u3059\u3002',
         'tip_countdown_full': '\u5236\u9650\u306e\u30ea\u30bb\u30c3\u30c8\u307e\u3067\u306e\u6b63\u78ba\u306a\u6b8b\u308a\u6642\u9593\u3092\u8868\u793a\u3057\u307e\u3059\u3002',
         'tip_sync': '\u5404\u30d0\u30fc\u306e\u6a2a\u306b\u6700\u5f8c\u306e\u66f4\u65b0\u6642\u523b\u3092\u8868\u793a\u3057\u307e\u3059\u3002',
+        'menu_pace_on': '\u9031\u9593\u30d0\u30fc\u306e\u30da\u30fc\u30b9\u8868\u793a: \u30aa\u30f3',
+        'menu_pace_off': '\u9031\u9593\u30d0\u30fc\u306e\u30da\u30fc\u30b9\u8868\u793a: \u30aa\u30d5',
+        'tip_pace': '\u9031\u9593\u30d0\u30fc\u3092 7 \u65e5\u306b\u5206\u5272\u3057\u3001\u4eca\u306e\u6642\u70b9\u3067\u306e\u76ee\u5b89\u306e\u6d88\u8cbb\u91cf\u3092\u793a\u3057\u307e\u3059\uff081\u65e5\u3042\u305f\u308a 1/7\uff09\u3002',
         'menu_theme': '\u30c6\u30fc\u30de',
         'theme_dark': '\u30c0\u30fc\u30af',
         'theme_light': '\u30e9\u30a4\u30c8',
@@ -3491,6 +3500,7 @@ class Section:
         self._reset_level = RESET_FULL   # width of the reset sub-label
         self._resets_at = None           # last reset time, to re-render at another width
         self._state = 'empty'            # 'empty' | 'missing' | 'ok' (see _render_reset)
+        self._pace = False               # 7-day ticks + "expected by now" marker (weekly bar only)
 
         self.frame = tk.Frame(parent, bg=BG)
         self.frame.pack(fill='x', padx=PAD, pady=(3, 0))
@@ -3663,6 +3673,36 @@ class Section:
             self._trackc = self._track
         self._draw(self.cv.winfo_width())
 
+    def set_pace(self, on):
+        """Show/hide the day divisions and the pace marker (7-day bars)."""
+        if on == self._pace:
+            return
+        self._pace = on
+        self._draw(self.cv.winfo_width())
+
+    def _draw_pace(self, w, fw):
+        """Six day dividers (each day is 1/7 of the week) and a marker at the
+        share of the week already elapsed: fill past the marker means burning
+        faster than 1/7 per day. The bar's window is 7 days by definition, so
+        the position comes from the reset time alone."""
+        def bg_at(x):
+            if self._pct <= 0:
+                return BAR_BG
+            return self._color if x < fw else self._trackc
+        for k in range(1, 7):
+            x = round(w * k / 7)
+            bg = bg_at(x)
+            self.cv.create_line(x, 4, x, BAR_H - 4,
+                                fill=_lerp_hex(bg, ink_on(bg), 0.35))
+        try:
+            secs = (datetime.fromisoformat(self._resets_at)
+                    - datetime.now(timezone.utc)).total_seconds()
+        except (ValueError, TypeError):
+            return
+        elapsed = min(1.0, max(0.0, 1 - secs / (7 * 86400)))
+        x = min(max(round(w * elapsed), 1), w - 2)
+        self.cv.create_line(x, 1, x, BAR_H - 1, fill=ink_on(bg_at(x)), width=2)
+
     def set_colors(self, fill, track):
         """Change this bar's fixed fill/track (from the colour picker) and
         repaint. No effect on what is drawn while dynamic mode is active, but
@@ -3684,6 +3724,8 @@ class Section:
         if self._pct > 0:
             fw = max(BAR_H, w * self._pct / 100)
             pill(self.cv, 0, 0, fw, BAR_H, self._color)
+        if self._pace and self._state == 'ok' and self._resets_at:
+            self._draw_pace(w, fw if self._pct > 0 else 0)
         pct_str = f'{self._pct:.0f}%' if self._pct > 0 else '0%'
         if self._compact and self._cd_txt:
             txt = f'{pct_str}  {self._cd_txt}'
@@ -4098,6 +4140,8 @@ class Widget:
         if self.cfg.get('bar_dynamic', False):
             for sec in self._all_sections():
                 sec._dynamic = True
+
+        self._apply_pace(self.cfg.get('weekly_pace', True))
 
         # Hamburger menu pill - shown on the right of the side-by-side strip
         # whenever essential mode is collapsed. It pushes the bars left so the
@@ -6201,6 +6245,10 @@ class Widget:
             self._menu_row(m, (t('menu_colors_dynamic') if dyn else t('menu_colors_fixed')),
                            lambda: self._flyout_set(lambda: self._toggle_bar_dynamic(close=False)),
                            icon='\U0001F3A8︎', icon_ft=FT_EMOJI, tip=t('tip_colors'))
+            pace = self.cfg.get('weekly_pace', True)
+            self._menu_row(m, (t('menu_pace_on') if pace else t('menu_pace_off')),
+                           lambda: self._flyout_set(lambda: self._toggle_weekly_pace(close=False)),
+                           icon='\U0001F4C5︎', icon_ft=FT_EMOJI, tip=t('tip_pace'))
             # Whether the widget has a taskbar button is a question about how it
             # is shown, so it belongs here rather than beside the alerts.
             tb = self.cfg.get('show_in_taskbar', False)
@@ -6791,6 +6839,20 @@ class Widget:
         render_hue()
         render_preview()
         self._place_dialog(dlg, dw)
+
+    def _apply_pace(self, on):
+        self.s_weekly.set_pace(on)
+        self.ess_bars['weekly'].set_pace(on)
+
+    def _toggle_weekly_pace(self, close=True):
+        """Show/hide the 7-day divisions and pace marker on the all-models bar."""
+        new = not self.cfg.get('weekly_pace', True)
+        self.cfg['weekly_pace'] = new
+        save_cfg(self.cfg)
+        wlog(f'PACE   weekly_pace -> {new}')
+        self._apply_pace(new)
+        if close:
+            self._close_menu()
 
     def _toggle_bar_dynamic(self, close=True):
         """Switch the whole widget between the fixed per-bar palette and the
