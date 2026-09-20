@@ -1,11 +1,13 @@
 # Claude Usage Widget for Windows
 
+> **Fork notice:** this is a fork of [niccolo-sabato/claude-usage-widget](https://github.com/niccolo-sabato/claude-usage-widget). It adds **weekly pace markers** to the *All models (7d)* bar: the bar is split into 7 daily slices (1/7 each) and a marker shows where your usage should be by now, so you can see at a glance whether you are burning the week's quota faster than one seventh per day. Toggle it from **Display > Weekly pace markers**. Everything else is the upstream project, under the same MIT licence.
+
 > **Track your Claude.ai usage limits in real time from a tiny widget that sits in an empty spot of your Windows 11 taskbar.** Free, open source, no telemetry.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Windows](https://img.shields.io/badge/Windows-10%2F11-blue.svg)](https://github.com/niccolo-sabato/claude-usage-widget/releases/latest)
-[![Latest release](https://img.shields.io/github/v/release/niccolo-sabato/claude-usage-widget)](https://github.com/niccolo-sabato/claude-usage-widget/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/niccolo-sabato/claude-usage-widget/total.svg)](https://github.com/niccolo-sabato/claude-usage-widget/releases)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11-blue.svg)](https://github.com/rtxnak/claude-usage-widget/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/rtxnak/claude-usage-widget)](https://github.com/rtxnak/claude-usage-widget/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/rtxnak/claude-usage-widget/total.svg)](https://github.com/rtxnak/claude-usage-widget/releases)
 
 ![The widget on the Windows 11 taskbar showing a single session bar](docs/images/taskbar-single.png)
 
@@ -104,7 +106,7 @@ Switch back to essential mode the same way. Whichever mode you choose is remembe
 
 ## Download
 
-[**Download latest release**](https://github.com/niccolo-sabato/claude-usage-widget/releases/latest) - one-click installer (~15 MB)
+[**Download latest release**](https://github.com/rtxnak/claude-usage-widget/releases/latest) - one-click installer (~15 MB)
 
 | | |
 |---|---|
@@ -289,7 +291,7 @@ Open **≡ > General > Connection self-test**. It follows the path a request act
 
 ## Contributing
 
-This is a personal project shared because it might be useful to others. Bugs, feature requests and pull requests are welcome via [GitHub Issues](https://github.com/niccolo-sabato/claude-usage-widget/issues).
+This is a personal project shared because it might be useful to others. Bugs, feature requests and pull requests are welcome via [GitHub Issues](https://github.com/rtxnak/claude-usage-widget/issues).
 
 If the widget saves you a frustrating mid-conversation cut-off, a star on the repo is the best thank-you.
 
@@ -299,7 +301,7 @@ This widget reads usage data from `claude.ai/api/organizations/{id}/usage`, the 
 
 ## License
 
-MIT License © 2026 Niccolò Sabato. See [LICENSE](LICENSE).
+MIT License © 2026 Niccolò Sabato (original project, [niccolo-sabato/claude-usage-widget](https://github.com/niccolo-sabato/claude-usage-widget)). Fork additions by [rtxnak](https://github.com/rtxnak) under the same licence. See [LICENSE](LICENSE).
 
 ---
 
